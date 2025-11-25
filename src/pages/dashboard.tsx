@@ -7,7 +7,6 @@ import {
   Filter,
   Ship,
   Anchor,
-  Download,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -25,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 
 interface Proprietaire {
@@ -46,7 +44,7 @@ interface MergedData {
   Propriétaire: string;
   Mois: number;
   Annee: number;
-  id: string; // for key
+  id: string;
 }
 
 export default function Dashboard() {
@@ -55,17 +53,14 @@ export default function Dashboard() {
   const [historiqueData, setHistoriqueData] = useState<Historique[]>([]);
   const [mergedData, setMergedData] = useState<MergedData[]>([]);
   
-  // Filters
   const [selectedProprietaire, setSelectedProprietaire] = useState<string>("all");
   const [barqueFilter, setBarqueFilter] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Process Owners File
   const handleProprietairesUpload = (file: File) => {
     Papa.parse(file, {
       header: true,
@@ -82,7 +77,6 @@ export default function Dashboard() {
     });
   };
 
-  // Process History File
   const handleHistoriqueUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -90,8 +84,6 @@ export default function Dashboard() {
       const lines = text.split('\n').filter(line => line.trim() !== '');
       
       const data = lines.map(line => {
-        // Original logic: split by ';'
-        // Index 0: Matricule, Index 1: Date (DD/MM/YYYY)
         const values = line.split(';');
         const dateStr = values[1] ? values[1].trim() : '';
         const dateParts = dateStr.split('/');
@@ -99,11 +91,7 @@ export default function Dashboard() {
         return {
           Matricule: values[0] ? values[0].trim() : '',
           DateMaree: dateStr,
-          Mois: parseInt(dateParts[0], 10) || 0, // Assuming MM/YYYY based on original code context, or is it just MM? Original: parseInt(dateParts[0])
-          // Wait, original code: const dateParts = values[1] ? values[1].trim().split('/') : [];
-          // return { Mois: parseInt(dateParts[0]), Annee: parseInt(dateParts[1]) }
-          // If date is DD/MM/YYYY, this might be wrong if it expects MM/YYYY.
-          // Let's assume the CSV has Month/Year format as per the original code logic structure.
+          Mois: parseInt(dateParts[0], 10) || 0,
           Annee: parseInt(dateParts[1], 10) || 0
         };
       });
@@ -118,7 +106,6 @@ export default function Dashboard() {
     reader.readAsText(file);
   };
 
-  // Merge Data Effect
   useEffect(() => {
     if (proprietairesData.length > 0 && historiqueData.length > 0) {
       const merged: MergedData[] = [];
@@ -140,11 +127,10 @@ export default function Dashboard() {
       });
       
       setMergedData(merged);
-      setCurrentPage(1); // Reset pagination
+      setCurrentPage(1);
     }
   }, [proprietairesData, historiqueData]);
 
-  // Filter Logic
   const filteredData = useMemo(() => {
     let data = mergedData;
 
@@ -160,13 +146,10 @@ export default function Dashboard() {
       );
     }
 
-    // Date logic from original app:
-    // const itemDate = new Date(item.Annee, item.Mois - 1, 1);
     if (startDate || endDate) {
       const start = startDate ? new Date(startDate) : null;
       const end = endDate ? new Date(endDate) : null;
       
-      // Normalize times
       if (start) start.setHours(0, 0, 0, 0);
       if (end) end.setHours(23, 59, 59, 999);
 
@@ -182,13 +165,11 @@ export default function Dashboard() {
     return data;
   }, [mergedData, selectedProprietaire, barqueFilter, startDate, endDate]);
 
-  // Unique Owners for Select
   const uniqueProprietaires = useMemo(() => {
     const props = new Set(mergedData.map(item => item['Propriétaire']));
     return Array.from(props).sort();
   }, [mergedData]);
 
-  // Pagination Logic
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const currentData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -205,13 +186,11 @@ export default function Dashboard() {
       return;
     }
 
-    // Format suitable for WhatsApp/SMS
     const itemsText = filteredData.map(item => 
       `⛵ *${item.Barque}* (${item.Matricule})\n📅 ${item.DateMaree}`
     ).join("\n\n------------------\n\n");
 
     const totalText = `📊 *Total des résultats:* ${filteredData.length}`;
-
     const textToCopy = `${totalText}\n\n${itemsText}`;
 
     navigator.clipboard.writeText(textToCopy).then(() => {
@@ -220,7 +199,7 @@ export default function Dashboard() {
         description: `${filteredData.length} résultats prêts à être collés (WhatsApp/SMS).`,
         duration: 3000,
       });
-    }).catch(err => {
+    }).catch(() => {
       toast({
         title: "Erreur de copie",
         description: "Impossible de copier les données.",
@@ -233,7 +212,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-sans text-slate-900">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-display font-bold text-slate-900 tracking-tight flex items-center gap-3">
@@ -252,7 +230,6 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Upload Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-white shadow-sm hover:shadow-md transition-shadow border-slate-200">
             <CardHeader>
@@ -303,7 +280,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Filters Section - Only show if we have data */}
         <div className="space-y-6">
           <div className="flex items-center gap-2">
             <Filter className="w-5 h-5 text-slate-400" />
@@ -362,7 +338,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Results Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
@@ -417,7 +392,6 @@ export default function Dashboard() {
               </table>
             </div>
             
-            {/* Pagination */}
             {filteredData.length > 0 && (
               <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
                 <span className="text-sm text-slate-500">

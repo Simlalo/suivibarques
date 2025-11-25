@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FileUploaderProps {
